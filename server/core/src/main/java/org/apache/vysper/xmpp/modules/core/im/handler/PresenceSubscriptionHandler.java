@@ -88,7 +88,7 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
                 initiatingEntity = sessionContext.getInitiatingEntity();
             }
         }
-        
+
         XMPPCoreStanzaVerifier verifier = presenceStanza.getCoreVerifier();
         ResourceRegistry registry = serverRuntimeContext.getResourceRegistry();
 
@@ -203,6 +203,13 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
             return;
         }
 
+        try {
+            // update roster item persistently
+            rosterManager.addContact(userBareJid, rosterItem);
+        } catch (RosterException e) {
+            logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
+        }
+
         // send roster push to all interested resources
         // TODO do this only once, since inbound is multiplexed on DeliveringInboundStanzaRelay level already
         List<String> resources = registry.getInterestedResources(user);
@@ -244,6 +251,13 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         if (result != OK) {
             // TODO
             return;
+        }
+
+        try {
+            // update roster item persistently
+            rosterManager.addContact(userBareJid, rosterItem);
+        } catch (RosterException e) {
+            logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
         }
 
         relayStanza(contact, stanza, sessionContext);
@@ -297,6 +311,13 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
             return;
         }
 
+        try {
+            // update roster item persistently
+            rosterManager.addContact(userBareJid, rosterItem);
+        } catch (RosterException e) {
+            logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
+        }
+
         // send roster push to all interested resources
         // TODO do this only once, since inbound is multiplexed on DeliveringInboundStanzaRelay level already
         List<String> resources = registry.getInterestedResources(user);
@@ -336,6 +357,13 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         if (result != OK) {
             // TODO
             return;
+        }
+
+        try {
+            // update roster item persistently
+            rosterManager.addContact(userBareJid, rosterItem);
+        } catch (RosterException e) {
+            logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
         }
 
         relayStanza(contact, stanza, sessionContext);
