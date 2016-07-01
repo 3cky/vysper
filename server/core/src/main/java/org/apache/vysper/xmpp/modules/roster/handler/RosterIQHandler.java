@@ -191,7 +191,8 @@ public class RosterIQHandler extends DefaultIQHandler {
 
         pushRosterItemToInterestedResources(sessionContext, user, existingItem);
 
-        return RosterStanzaUtils.createRosterItemIQ(user, stanza.getID(), IQStanzaType.RESULT, existingItem);
+        // return success
+        return StanzaBuilder.createIQStanza(null, user, IQStanzaType.RESULT, stanza.getID()).build();
     }
 
     @SpecCompliant(spec = "rfc3921bis-08", section = "2.5", status = IN_PROGRESS, coverage = COMPLETE, comment = "actual implementation")
