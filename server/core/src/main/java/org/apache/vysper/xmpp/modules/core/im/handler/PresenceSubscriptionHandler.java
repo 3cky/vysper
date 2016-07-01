@@ -218,6 +218,8 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
             Stanza push = RosterStanzaUtils.createRosterItemPushIQ(userResource, sessionContext.nextSequenceValue(),
                     rosterItem);
             LocalDeliveryUtils.relayToResourceDirectly(registry, resource, push);
+            // deliver state change notification
+            LocalDeliveryUtils.relayToResourceDirectly(registry, resource, stanza);
         }
 
     }
@@ -326,6 +328,8 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
             Stanza push = RosterStanzaUtils.createRosterItemPushIQ(userResource, sessionContext.nextSequenceValue(),
                     rosterItem);
             LocalDeliveryUtils.relayToResourceDirectly(registry, resource, push);
+            // deliver state change notification
+            LocalDeliveryUtils.relayToResourceDirectly(registry, resource, stanza);
         }
     }
 
