@@ -59,8 +59,6 @@ import org.slf4j.LoggerFactory;
 /**
  * handling presence stanzas of type subscription
  *
- * TODO: review all the printStackTraces and throws and turn them into logs or stanza errors
- *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
 public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHandler {
@@ -189,7 +187,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         try {
             rosterItem = rosterManager.getContact(userBareJid, contactBareJid);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -241,7 +238,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         try {
             rosterItem = rosterManager.getContact(userBareJid, contactBareJid);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -299,7 +295,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         try {
             rosterItem = rosterManager.getContact(userBareJid, contactBareJid);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -349,7 +344,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         try {
             rosterItem = rosterManager.getContact(userBareJid, contactBareJid);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -399,7 +393,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
 
             rosterManager.addContact(userBareJid, rosterItem);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -459,7 +452,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
 
             rosterManager.addContact(userBareJid, rosterItem);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -500,7 +492,6 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
 
             rosterManager.addContact(userBareJid, rosterItem);
         } catch (RosterException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
@@ -553,7 +544,7 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         try {
             stanzaRelay.relay(stanza.getTo(), stanza, new IgnoreFailureStrategy());
         } catch (DeliveryException e) {
-            e.printStackTrace();
+            logger.error("Can't relay stanza: " + stanza, e);
         }
 
         // send roster push to all of the user's interested resources

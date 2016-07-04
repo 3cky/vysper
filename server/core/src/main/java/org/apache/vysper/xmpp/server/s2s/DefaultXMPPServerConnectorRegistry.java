@@ -32,17 +32,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default implementation of {@link XMPPServerConnectorRegistry} 
- *  
+ * Default implementation of {@link XMPPServerConnectorRegistry}
+ *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
 public class DefaultXMPPServerConnectorRegistry implements XMPPServerConnectorRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultXMPPServerConnectorRegistry.class);
-    
+
     private ServerRuntimeContext serverRuntimeContext;
     private Map<Entity, XMPPServerConnector> connectors = new ConcurrentHashMap<Entity, XMPPServerConnector>();
-    
+
     public DefaultXMPPServerConnectorRegistry(ServerRuntimeContext serverRuntimeContext) {
         this.serverRuntimeContext = serverRuntimeContext;
     }
@@ -57,8 +57,8 @@ public class DefaultXMPPServerConnectorRegistry implements XMPPServerConnectorRe
         if(connector != null && connector.isClosed()) {
             connectors.remove(server);
             connector = null;
-        } 
-        
+        }
+
         if(connector == null) {
             LOG.debug("starting s2s connector to " + server);
             connector = createConnector(server, serverRuntimeContext, null, null);
@@ -69,10 +69,10 @@ public class DefaultXMPPServerConnectorRegistry implements XMPPServerConnectorRe
             connectors.put(server, connector);
             LOG.debug("s2s connector registry size is now " + connectors.size());
         }
-        
-        return connector;        
+
+        return connector;
     }
-    
+
     @SpecCompliant(spec = "draft-ietf-xmpp-3920bis-22", section = "10.4", status = SpecCompliant.ComplianceStatus.FINISHED, coverage = SpecCompliant.ComplianceCoverage.COMPLETE)
     public synchronized XMPPServerConnector connectForDialback(Entity server, SessionContext orginalSessionContext, SessionStateHolder originalSessionStateHolder) throws RemoteServerNotFoundException, RemoteServerTimeoutException {
         LOG.debug("starting s2s connector for dialback to " + server);
@@ -81,11 +81,11 @@ public class DefaultXMPPServerConnectorRegistry implements XMPPServerConnectorRe
         LOG.debug("started s2s connector for dialback to " + server);
         return connector;
     }
-    
+
     protected XMPPServerConnector createConnector(Entity otherServer, ServerRuntimeContext serverRuntimeContext, SessionContext dialbackSessionContext, SessionStateHolder dialbackSessionStateHolder) {
         return new DefaultXMPPServerConnector(otherServer, serverRuntimeContext, dialbackSessionContext, dialbackSessionStateHolder);
     }
-    
+
     /* (non-Javadoc)
      * @see org.apache.vysper.xmpp.server.s2s.XMPPServerConnectorRegistry#close()
      */
@@ -95,7 +95,7 @@ public class DefaultXMPPServerConnectorRegistry implements XMPPServerConnectorRe
             try {
                 connector.close();
             } catch (Throwable e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                LOG.debug("Error while closing s2s connector", e);
             }
         }
     }

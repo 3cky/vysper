@@ -31,10 +31,14 @@ import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  */
 public class ComponentStanzaProcessor implements StanzaProcessor {
+
+    final Logger logger = LoggerFactory.getLogger(ComponentStanzaProcessor.class);
 
     protected ServerRuntimeContext serverRuntimeContext;
 
@@ -72,8 +76,7 @@ public class ComponentStanzaProcessor implements StanzaProcessor {
             responseStanzaContainer = stanzaHandler.execute(stanza, serverRuntimeContext, false, sessionContext,
                     sessionStateHolder);
         } catch (ProtocolException e) {
-            // TODO handle 
-            e.printStackTrace();
+            logger.error("Can'r process stanza: " + stanza, e);
         }
 
         if (responseStanzaContainer != null && responseStanzaContainer.getResponseStanza() != null) {
