@@ -350,24 +350,33 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         if (rosterItem == null)
             return;
 
-        RosterSubscriptionMutator.Result result = RosterSubscriptionMutator.getInstance().remove(rosterItem, FROM);
+        if (rosterItem.getAskSubscriptionType() == ASK_SUBSCRIBED) {
+            try {
+                // remove temporary roster item
+                rosterManager.removeContact(userBareJid, contactBareJid);
+            } catch (RosterException e) {
+                logger.error("Can't remove temporary " + rosterItem + " in roster " + userBareJid, e);
+            }
+        } else {
+            RosterSubscriptionMutator.Result result = RosterSubscriptionMutator.getInstance().remove(rosterItem, FROM);
 
-        if (result != OK) {
-            // TODO
-            return;
-        }
+            if (result != OK) {
+                // TODO
+                return;
+            }
 
-        try {
-            // update roster item persistently
-            rosterManager.addContact(userBareJid, rosterItem);
-        } catch (RosterException e) {
-            logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
+            try {
+                // update roster item persistently
+                rosterManager.addContact(userBareJid, rosterItem);
+            } catch (RosterException e) {
+                logger.error("Can't update " + rosterItem + " in roster " + userBareJid, e);
+            }
+
+            // send roster push to all of the user's interested resources
+            sendRosterUpdate(sessionContext, registry, user, rosterItem);
         }
 
         relayStanza(contact, stanza, sessionContext);
-
-        // send roster push to all of the user's interested resources
-        sendRosterUpdate(sessionContext, registry, user, rosterItem);
     }
 
     @SpecCompliance(compliant = {
