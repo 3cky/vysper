@@ -42,6 +42,7 @@ import org.apache.vysper.xmpp.delivery.failure.DeliveryException;
 import org.apache.vysper.xmpp.delivery.failure.IgnoreFailureStrategy;
 import org.apache.vysper.xmpp.modules.core.base.handler.XMPPCoreStanzaHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0160_offline_storage.OfflineStorageProvider;
+import org.apache.vysper.xmpp.modules.roster.AskSubscriptionType;
 import org.apache.vysper.xmpp.modules.roster.RosterException;
 import org.apache.vysper.xmpp.modules.roster.RosterItem;
 import org.apache.vysper.xmpp.modules.roster.RosterUtils;
@@ -76,8 +77,8 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
     final Logger logger = LoggerFactory.getLogger(PresenceAvailabilityHandler.class);
 
     /**
-     * handles availability presence stanzas. prepares further processing of the 
-     * stanza and decides which special case of availability to transfer to. 
+     * handles availability presence stanzas. prepares further processing of the
+     * stanza and decides which special case of availability to transfer to.
      */
     @Override
     /*package*/Stanza executeCorePresence(ServerRuntimeContext serverRuntimeContext, boolean isOutboundStanza,
@@ -143,7 +144,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         }
     }
 
-    protected Stanza handleInboundPresenceError(PresenceStanza stanza, ServerRuntimeContext serverRuntimeContext, 
+    protected Stanza handleInboundPresenceError(PresenceStanza stanza, ServerRuntimeContext serverRuntimeContext,
                                               SessionContext sessionContext, ResourceRegistry registry) {
         return stanza; // send to client
     }
@@ -261,15 +262,15 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         // message delivery (see RFC3921bis-05#8.3.1.1)
         registry.setResourcePriority(resourceId, presenceStanza.getPrioritySafe());
 
-		// check for pending offline stored stanzas, and send them out 
+		// check for pending offline stored stanzas, and send them out
 		OfflineStorageProvider offlineProvider = (OfflineStorageProvider) serverRuntimeContext
 				.getStorageProvider(OfflineStorageProvider.class);
 		if (offlineProvider == null) {
-			logger.warn("No Offline Storage Provider configured");
+			logger.debug("No Offline Storage Provider configured");
 		} else {
 			Collection<Stanza> offlineStanzas = offlineProvider.getStanzasFor(user);
 			for (Stanza stanza : offlineStanzas) {
-				logger.debug("Sending out delayed offline stanza");
+				logger.debug("Sending out delayed offline stanza: {}", stanza);
 				relayStanza(user, stanza, sessionContext);
 			}
 		}
@@ -280,6 +281,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         List<RosterItem> item_FROM = itemMap.get(SubscriptionType.FROM);
         List<RosterItem> item_TO = itemMap.get(SubscriptionType.TO);
         List<RosterItem> item_BOTH = itemMap.get(SubscriptionType.BOTH);
+        List<RosterItem> item_NONE = itemMap.get(SubscriptionType.NONE);
 
         // broadcast presence from full JID to contacts
         // in roster with 'subscription' either 'from' or 'both'
@@ -304,6 +306,19 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
 
         // and send them out
         relayTo(user, contacts, presenceStanza, sessionContext);
+
+        // send pending inbound subscription requests
+        List<RosterItem> rosterContacts_NOT_FROM = new ArrayList<RosterItem>();
+        rosterContacts_NOT_FROM.addAll(item_NONE);
+        rosterContacts_NOT_FROM.addAll(item_TO);
+        for (RosterItem rosterItem : rosterContacts_NOT_FROM) {
+            if (rosterItem.getAskSubscriptionType() == AskSubscriptionType.ASK_SUBSCRIBED) {
+                Entity from = rosterItem.getJid().getBareJID();
+                PresenceStanza stanza = buildPresenceStanza(from, user, PresenceStanzaType.SUBSCRIBE, null);
+                logger.debug("Sending out delayed presence stanza: {}", stanza);
+                relayStanza(user, stanza, sessionContext);
+            }
+        }
 
         if (!isPresenceUpdate) {
             // initial presence only:
