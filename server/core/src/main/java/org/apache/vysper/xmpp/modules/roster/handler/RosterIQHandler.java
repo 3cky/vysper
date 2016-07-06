@@ -220,20 +220,20 @@ public class RosterIQHandler extends DefaultIQHandler {
                     StanzaErrorType.CANCEL, "roster item contact not in roster: " + contactJid, null, null);
         }
 
-        if (unsubscribedStanza != null) {
-            try {
-                sessionContext.getServerRuntimeContext().getStanzaRelay().relay(contactJid, unsubscribedStanza,
-                        new IgnoreFailureStrategy());
-            } catch (DeliveryException e) {
-                logger.warn("failure sending unsubscribed on roster remove", e);
-            }
-        }
         if (unsubscribeStanza != null) {
             try {
                 sessionContext.getServerRuntimeContext().getStanzaRelay().relay(contactJid, unsubscribeStanza,
                         new IgnoreFailureStrategy());
             } catch (DeliveryException e) {
                 logger.warn("failure sending unsubscribe on roster remove", e);
+            }
+        }
+        if (unsubscribedStanza != null) {
+            try {
+                sessionContext.getServerRuntimeContext().getStanzaRelay().relay(contactJid, unsubscribedStanza,
+                        new IgnoreFailureStrategy());
+            } catch (DeliveryException e) {
+                logger.warn("failure sending unsubscribed on roster remove", e);
             }
         }
 
