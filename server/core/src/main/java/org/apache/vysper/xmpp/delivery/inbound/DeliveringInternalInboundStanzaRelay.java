@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
  * 'incoming' here means:
  * a. stanzas coming in from other servers
  * b. stanzas coming from other (local) sessions and are targeted to clients on this server
- *  
+ *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
 public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, ManagedThreadPool {
@@ -77,7 +77,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
     final Logger logger = LoggerFactory.getLogger(DeliveringInternalInboundStanzaRelay.class);
 
     private static class RejectedDeliveryHandler implements RejectedExecutionHandler {
-        
+
         DeliveringInternalInboundStanzaRelay relay;
         Logger logger;
 
@@ -90,7 +90,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
             logger.info("relaying of internal inbound stanza has been rejected");
         }
     }
-    
+
     private static final InboundStanzaProtocolWorker INBOUND_STANZA_PROTOCOL_WORKER = new InboundStanzaProtocolWorker();
 
     private static final Integer PRIO_THRESHOLD = 0;
@@ -106,9 +106,9 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
     protected Entity serverEntity;
 
     protected ServerRuntimeContext serverRuntimeContext = null;
-    
+
     protected LogStorageProvider logStorageProvider = null;
-    
+
     protected long lastCompleted = 0;
     protected long lastDumpTimestamp = 0;
 
@@ -151,7 +151,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
         threadPoolExecutor.setCorePoolSize(maxThreadPoolCount);
         threadPoolExecutor.setMaximumPoolSize(2*maxThreadPoolCount);
     }
-    
+
     public void setThreadTimeoutSeconds(int threadTimeoutSeconds) {
         if (!(executor instanceof ThreadPoolExecutor)) {
             throw new IllegalStateException("cannot set thread timeout for " + executor.getClass());
@@ -159,7 +159,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor)executor;
         threadPoolExecutor.setKeepAliveTime(threadTimeoutSeconds, TimeUnit.SECONDS);
     }
-    
+
     public void dumpThreadPoolInfo(Writer writer) throws IOException {
         if (!(executor instanceof ThreadPoolExecutor)) {
             throw new IllegalStateException("cannot dump info for " + executor.getClass());
@@ -177,13 +177,13 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
         lastDumpTimestamp = now;
         lastCompleted = completedTaskCount;
     }
-    
+
     public void relay(Entity receiver, Stanza stanza, DeliveryFailureStrategy deliveryFailureStrategy)
             throws DeliveryException {
         if (!isRelaying()) {
             throw new ServiceNotAvailableException("internal inbound relay is not relaying");
         }
-        
+
         Future<RelayResult> resultFuture = executor.submit(new Relay(receiver, stanza, deliveryFailureStrategy));
         if (this.logStorageProvider != null) {
             this.logStorageProvider.logStanza(receiver, stanza);
@@ -349,7 +349,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
                 return relayToBestSessions(false);
             }
 
-            // for any other type of stanza 
+            // for any other type of stanza
             return new RelayResult(new ServiceNotAvailableException());
         }
 
@@ -409,8 +409,13 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay, Manage
             List<SessionContext> receivingSessions = prioThreshold == null ? resourceRegistry.getSessions(receiver)
                     : resourceRegistry.getSessions(receiver, prioThreshold);
 
-            if (receivingSessions.size() == 0) {
-                return relayNotPossible();
+            if (receivingSessions.isEmpty()) {
+                if (PresenceStanza.isOfType(stanza)) {
+                    // inbound presence stanzas should be processed even if no resource is available
+                    receivingSessions.add(new DeferredInboundPresenceStanzaSessionContext(serverRuntimeContext, sessionStateHolder));
+                } else {
+                    return relayNotPossible();
+                }
             }
 
             if (receivingSessions.size() > 1) {
