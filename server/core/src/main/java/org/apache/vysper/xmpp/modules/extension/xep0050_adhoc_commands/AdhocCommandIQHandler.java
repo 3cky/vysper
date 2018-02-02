@@ -21,9 +21,9 @@ package org.apache.vysper.xmpp.modules.extension.xep0050_adhoc_commands;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.vysper.xml.fragment.XMLElement;
@@ -40,13 +40,16 @@ import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 import org.apache.vysper.xmpp.stanza.StanzaErrorCondition;
 import org.apache.vysper.xmpp.stanza.StanzaErrorType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  */
 public class AdhocCommandIQHandler extends DefaultIQHandler {
+    final static Logger logger = LoggerFactory.getLogger(AdhocCommandIQHandler.class);
 
     protected final Collection<AdhocCommandSupport> adhocCommandSupporters;
-    protected final Map<String, AdhocCommandHandler> runningCommands = new HashMap<String, AdhocCommandHandler>();
+    protected final Map<String, AdhocCommandHandler> runningCommands = new ConcurrentHashMap<String, AdhocCommandHandler>();
 
     public AdhocCommandIQHandler(Collection<AdhocCommandSupport> adhocCommandSupporters) {
         this.adhocCommandSupporters = adhocCommandSupporters;
@@ -116,23 +119,38 @@ public class AdhocCommandIQHandler extends DefaultIQHandler {
                     StanzaErrorType.CANCEL, "command is not available", null, null);
         }
 
-        List<Note> notes = new ArrayList<Note>();
-        final XMLElement result = commandHandler.process(commandElements, notes);
-
         final String sessionId = commandHandler.getSessionId();
+
+        List<Note> notes = new ArrayList<Note>();
+        XMLElement result;
+        try {
+            result = commandHandler.process(commandElements, notes);
+        } catch (Exception e) {
+            logger.error("Command handler " + commandHandler + " execution error", e);
+            runningCommands.remove(sessionId);
+            return ServerErrorResponses.getStanzaError(StanzaErrorCondition.BAD_REQUEST, stanza,
+                    StanzaErrorType.CANCEL, "command execution error: " + e, null, null);
+        }
+
         final boolean isExecuting = commandHandler.isExecuting();
 
-        final Stanza response = buildResponse(stanza, from, commandNode, sessionId, 
+        if (!isExecuting) {
+            // session ends when the responder sends a status 'completed'
+            // https://xmpp.org/extensions/xep-0050.html#impl-session
+            runningCommands.remove(sessionId);
+        }
+
+        final Stanza response = buildResponse(stanza, from, commandNode, sessionId,
                                              isExecuting ? "executing" : "completed", result, notes,
                                               commandHandler.isPrevAllowed(), commandHandler.isNextAllowed());
         return response;
     }
 
-    private Stanza buildResponse(IQStanza stanza, Entity from, String commandNode, String sessionId, 
+    private Stanza buildResponse(IQStanza stanza, Entity from, String commandNode, String sessionId,
                                  final String status) {
         return buildResponse(stanza, from, commandNode, sessionId, status, null, null, false, false);
     }
-    
+
     private Stanza buildResponse(IQStanza stanza, Entity from, String commandNode, String sessionId,
                                  final String status, XMLElement result,
                                  List<Note> notes, boolean isPrevAllowed, boolean isNextAllowed) {
@@ -169,7 +187,7 @@ public class AdhocCommandIQHandler extends DefaultIQHandler {
     to='bard@shakespeare.lit/globe'
     type='result'
     xml:lang='en'>
-  <command xmlns='http://jabber.org/protocol/commands' 
+  <command xmlns='http://jabber.org/protocol/commands'
            node='http://jabber.org/protocol/admin#add-user'
            sessionid='add-user:20040408T0337Z'
            status='executing'>
@@ -202,9 +220,9 @@ public class AdhocCommandIQHandler extends DefaultIQHandler {
     </x>
   </command>
 </iq>
-    
+
      */
-    
+
 
     @Override
     protected Stanza handleGet(IQStanza stanza, ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext) {
