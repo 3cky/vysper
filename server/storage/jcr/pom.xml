@@ -20,13 +20,13 @@
   <parent>
     <artifactId>vysper-storage</artifactId>
     <groupId>org.apache.vysper</groupId>
-    <version>0.8-SNAPSHOT</version>
+    <version>0.8-sc-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.vysper.storage</groupId>
   <artifactId>vysper-jcr</artifactId>
   <name>Apache Vysper JCR Storage Binding (Jackrabbit)</name>
-  <version>0.8-SNAPSHOT</version>
+  <version>0.8-sc-SNAPSHOT</version>
   
   
   <dependencies>
